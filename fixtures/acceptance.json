@@ -1,0 +1,158 @@
+{
+  "scenario": "全球人工智能安全语料发布与代表性验证站",
+  "synthetic": true,
+  "records": [
+    {
+      "record_id": "safety_sample-001",
+      "payload": {
+        "sample_id": "sample_id-0",
+        "risk_category": "risk_category-1",
+        "token_count": 15.8,
+        "duplicate_similarity": 17.7,
+        "language_coverage": 19.6,
+        "sensitive_entity_rate": 21.5,
+        "annotation_agreement": 23.4,
+        "license_compatibility": 25.3,
+        "split_drift": 27.2,
+        "rare_group_gap": 29.1,
+        "source_batch": "source_batch-0",
+        "consent_basis": "consent_basis-1"
+      },
+      "state": "received",
+      "source": "synthetic-local-acceptance"
+    },
+    {
+      "record_id": "safety_sample-002",
+      "payload": {
+        "sample_id": "sample_id-1",
+        "risk_category": "risk_category-2",
+        "token_count": 19.5,
+        "duplicate_similarity": 21.4,
+        "language_coverage": 23.3,
+        "sensitive_entity_rate": 25.2,
+        "annotation_agreement": 27.1,
+        "license_compatibility": 29.0,
+        "split_drift": 30.9,
+        "rare_group_gap": 32.8,
+        "source_batch": "source_batch-1",
+        "consent_basis": "consent_basis-2"
+      },
+      "state": "received",
+      "source": "synthetic-local-acceptance"
+    },
+    {
+      "record_id": "safety_sample-003",
+      "payload": {
+        "sample_id": "sample_id-2",
+        "risk_category": "risk_category-3",
+        "token_count": 23.2,
+        "duplicate_similarity": 25.1,
+        "language_coverage": 27.0,
+        "sensitive_entity_rate": 28.9,
+        "annotation_agreement": 30.8,
+        "license_compatibility": 32.7,
+        "split_drift": 34.6,
+        "rare_group_gap": 36.5,
+        "source_batch": "source_batch-2",
+        "consent_basis": "consent_basis-3"
+      },
+      "state": "received",
+      "source": "synthetic-local-acceptance"
+    },
+    {
+      "record_id": "safety_sample-004",
+      "payload": {
+        "sample_id": "sample_id-3",
+        "risk_category": "risk_category-4",
+        "token_count": 26.9,
+        "duplicate_similarity": 28.8,
+        "language_coverage": 30.7,
+        "sensitive_entity_rate": 32.6,
+        "annotation_agreement": 34.5,
+        "license_compatibility": 36.4,
+        "split_drift": 38.3,
+        "rare_group_gap": 40.2,
+        "source_batch": "source_batch-3",
+        "consent_basis": "consent_basis-4"
+      },
+      "state": "received",
+      "source": "synthetic-local-acceptance"
+    },
+    {
+      "record_id": "safety_sample-005",
+      "payload": {
+        "sample_id": "sample_id-4",
+        "risk_category": "risk_category-0",
+        "token_count": 30.6,
+        "duplicate_similarity": 32.5,
+        "language_coverage": 34.4,
+        "sensitive_entity_rate": 36.3,
+        "annotation_agreement": 38.2,
+        "license_compatibility": 40.1,
+        "split_drift": 42.0,
+        "rare_group_gap": 43.9,
+        "source_batch": "source_batch-4",
+        "consent_basis": "consent_basis-0"
+      },
+      "state": "received",
+      "source": "synthetic-local-acceptance"
+    },
+    {
+      "record_id": "safety_sample-006",
+      "payload": {
+        "sample_id": "sample_id-0",
+        "risk_category": "risk_category-1",
+        "token_count": 34.3,
+        "duplicate_similarity": 36.2,
+        "language_coverage": 38.1,
+        "sensitive_entity_rate": 40.0,
+        "annotation_agreement": 41.9,
+        "license_compatibility": 43.8,
+        "split_drift": 45.7,
+        "rare_group_gap": 47.6,
+        "source_batch": "source_batch-0",
+        "consent_basis": "consent_basis-1"
+      },
+      "state": "received",
+      "source": "synthetic-local-acceptance"
+    },
+    {
+      "record_id": "safety_sample-007",
+      "payload": {
+        "sample_id": "sample_id-1",
+        "risk_category": "risk_category-2",
+        "token_count": 38.0,
+        "duplicate_similarity": 39.9,
+        "language_coverage": 41.8,
+        "sensitive_entity_rate": 43.7,
+        "annotation_agreement": 45.6,
+        "license_compatibility": 47.5,
+        "split_drift": 49.4,
+        "rare_group_gap": 51.3,
+        "source_batch": "source_batch-1",
+        "consent_basis": "consent_basis-2"
+      },
+      "state": "received",
+      "source": "synthetic-local-acceptance"
+    },
+    {
+      "record_id": "safety_sample-008",
+      "payload": {
+        "sample_id": "sample_id-2",
+        "risk_category": "risk_category-3",
+        "token_count": 41.7,
+        "duplicate_similarity": 43.6,
+        "language_coverage": 45.5,
+        "sensitive_entity_rate": 47.4,
+        "annotation_agreement": 49.3,
+        "license_compatibility": 51.2,
+        "split_drift": 53.1,
+        "rare_group_gap": 55.0,
+        "source_batch": "source_batch-2",
+        "consent_basis": "consent_basis-3"
+      },
+      "state": "received",
+      "source": "synthetic-local-acceptance"
+    }
+  ]
+}
