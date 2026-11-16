@@ -160,11 +160,15 @@ class EndToEndTests(unittest.TestCase):
         self.assertEqual(first["records"], second["records"])
         self.assertEqual(Repository(self.database).snapshot()["counts"]["records"], len(load_records()))
 
-    def test_manifest_lists_all_json_artifacts(self):
+    def test_manifest_lists_every_released_artifact(self):
         run(FIXTURE, self.database, self.output)
         manifest = json.loads((self.output / "manifest.json").read_text(encoding="utf-8"))
-        self.assertEqual(set(manifest["files"]), {"summary.json", "decisions.json", "audit-events.json"})
+        self.assertEqual(set(manifest["files"]),
+                         {"summary.json", "decisions.json", "audit-events.json",
+                          "records.csv", "rules.csv", "split-plan.json"})
         self.assertGreater(manifest["rule_rows"], 500)
+        self.assertTrue(manifest["bundle_id"])
+        self.assertEqual(manifest["manifest_version"], "2.0")
 
     def test_records_csv_has_one_row_per_record(self):
         run(FIXTURE, self.database, self.output)
@@ -186,6 +190,108 @@ class EndToEndTests(unittest.TestCase):
         summary["record_count"] = 999
         (self.output / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
         self.assertIn("summary.json hash mismatch", verify_bundle(self.output))
+
+    def test_records_csv_tampering_is_detected(self):
+        run(FIXTURE, self.database, self.output)
+        self.assertEqual(verify_bundle(self.output), [])
+        path = self.output / "records.csv"
+        lines = path.read_text(encoding="utf-8").splitlines()
+        header, first = lines[0], lines[1].split(",")
+        first[0] = "tampered-record-id"
+        path.write_text(header + "\n" + ",".join(first) + "\n", encoding="utf-8")
+        errors = verify_bundle(self.output)
+        self.assertIn("records.csv hash mismatch", errors)
+        self.assertFalse(verify(self.database, self.output)["ok"])
+
+    def test_rules_csv_tampering_is_detected(self):
+        run(FIXTURE, self.database, self.output)
+        self.assertEqual(verify_bundle(self.output), [])
+        path = self.output / "rules.csv"
+        lines = path.read_text(encoding="utf-8").splitlines()
+        header, first = lines[0], lines[1].split(",")
+        first[2] = "True" if first[2] != "True" else "False"
+        path.write_text(header + "\n" + ",".join(first) + "\n", encoding="utf-8")
+        self.assertIn("rules.csv hash mismatch", verify_bundle(self.output))
+
+    def test_row_count_tampering_is_detected(self):
+        run(FIXTURE, self.database, self.output)
+        path = self.output / "records.csv"
+        lines = path.read_text(encoding="utf-8").splitlines()
+        path.write_text("\n".join(lines[:-1]) + "\n", encoding="utf-8")
+        errors = verify_bundle(self.output)
+        self.assertTrue(any("records.csv" in error for error in errors))
+
+    def test_split_plan_keeps_duplicate_clusters_intact(self):
+        run(FIXTURE, self.database, self.output)
+        plan = json.loads((self.output / "split-plan.json").read_text(encoding="utf-8"))
+        self.assertEqual(plan["record_count"], len(load_records()))
+        self.assertEqual(plan["duplicate_record_count"], 3)
+        self.assertEqual(plan["cluster_count"], 5)
+        for cluster in plan["clusters"]:
+            partitions = {plan["assignments"][record_id] for record_id in cluster["record_ids"]}
+            self.assertEqual(len(partitions), 1, cluster)
+        paired = next(cluster for cluster in plan["clusters"] if cluster["record_count"] == 2)
+        self.assertEqual(set(paired["record_ids"]), {"safety_sample-001", "safety_sample-006"})
+
+    def test_split_membership_is_deterministic_across_runs(self):
+        first = run(FIXTURE, self.database, self.output)
+        first_plan = json.loads((self.output / "split-plan.json").read_text(encoding="utf-8"))
+        second = run(FIXTURE, self.database, self.output)
+        second_plan = json.loads((self.output / "split-plan.json").read_text(encoding="utf-8"))
+        self.assertEqual(first["manifest"]["bundle_id"], second["manifest"]["bundle_id"])
+        self.assertEqual(first_plan["assignments"], second_plan["assignments"])
+        self.assertEqual(first_plan["clusters"], second_plan["clusters"])
+
+    def test_bundle_identity_is_stable_across_independent_builds(self):
+        other_root = self.root / "other-output"
+        other_database = self.root / "other.sqlite3"
+        first = run(FIXTURE, self.database, self.output)
+        second = run(FIXTURE, other_database, other_root)
+        self.assertEqual(first["manifest"]["bundle_id"], second["manifest"]["bundle_id"])
+
+    def test_split_plan_carries_coverage_and_quality_basis(self):
+        run(FIXTURE, self.database, self.output)
+        plan = json.loads((self.output / "split-plan.json").read_text(encoding="utf-8"))
+        self.assertIn("coverage", plan)
+        self.assertIn("cell_count", plan["coverage"])
+        self.assertIn("quality", plan)
+        self.assertEqual(plan["quality"]["count"], len(load_records()))
+        self.assertTrue(0.0 <= plan["quality"]["minimum_score"] <= plan["quality"]["maximum_score"] <= 1.0)
+        self.assertEqual(sum(entry["record_count"] for entry in plan["partitions"]), len(load_records()))
+
+    def test_trusted_artifacts_reject_tampered_bundle(self):
+        from safety_corpus_release.release.manifest import trusted_artifacts
+        run(FIXTURE, self.database, self.output)
+        clean = trusted_artifacts(self.output)
+        self.assertTrue(clean["ok"], clean["errors"])
+        self.assertEqual(clean["manifest"]["bundle_id"], clean["split_plan"]["bundle_id"])
+        path = self.output / "rules.csv"
+        path.write_text(path.read_text(encoding="utf-8").replace("True", "False", 1), encoding="utf-8")
+        tampered = trusted_artifacts(self.output)
+        self.assertFalse(tampered["ok"])
+        self.assertTrue(any("rules.csv" in error for error in tampered["errors"]))
+
+    def test_split_cli_refuses_untrusted_bundle(self):
+        from safety_corpus_release.console import main
+        import io
+        import contextlib
+        run(FIXTURE, self.database, self.output)
+        with contextlib.redirect_stdout(io.StringIO()) as captured:
+            exit_code = main(["split", "--output", str(self.output),
+                              "--record-id", "safety_sample-001"])
+        payload = json.loads(captured.getvalue())
+        self.assertEqual(exit_code, 0)
+        self.assertIn(payload["partition"], {"train", "validation"})
+        self.assertTrue(payload["bundle_id"])
+
+        path = self.output / "records.csv"
+        path.write_text(path.read_text(encoding="utf-8") + "extra,row\n", encoding="utf-8")
+        with contextlib.redirect_stdout(io.StringIO()) as captured:
+            exit_code = main(["split", "--output", str(self.output)])
+        payload = json.loads(captured.getvalue())
+        self.assertEqual(exit_code, 1)
+        self.assertFalse(payload["ok"])
+        self.assertTrue(payload["errors"])
 
     def test_load_fixture_rejects_non_object(self):
         path = self.root / "invalid.json"
